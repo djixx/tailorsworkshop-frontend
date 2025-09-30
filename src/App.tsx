@@ -1,22 +1,30 @@
-import { useState } from 'react'
+import Workflow from './components/Workflow'
 import './App.css'
-
+import FeatureSection from './components/FeatureSection'
+import HeroSection from './components/HeroSection'
+import Navbar from './components/Navbar'
+import Testimonial from './components/Testimonial'
+import Footer from './components/Footer'
+import bg1 from "../src/assets/bg2.jpg"
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
-   <div className="p-6 m-6 bg-yellow-200 rounded-lg text-center">
-      <p className="text-red-600 text-2xl font-bold mb-4">
-        Tailwind radi! 🎉
-      </p>
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-        Hover me!
-      </button>
-      <p className="mt-4 text-green-700 italic">
-        Ako vidiš zelenu italik rečenicu, margin-top radi.
-      </p>
-    </div>
+      <Navbar />
+      <div
+        className=" h-screen w-full bg-cover bg-center"
+        style={{ backgroundImage: `url(${bg1})` }}
+      >
+        <div className='max-w-7xl mx-auto pt-20 px-6'>
+          <HeroSection />
+        </div>
+        <FeatureSection />
+        <Workflow />
+        <Testimonial />
+        <Footer />
+      </div>
+
+
     </>
   )
 }
