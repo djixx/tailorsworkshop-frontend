@@ -27,10 +27,20 @@ const ProductTable = () => {
   const [sortField, setSortField] = useState<keyof Product>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false);
 
-  const openModal = () => setShowModal(true);
-  const closeModal = () => setShowModal(false);
+  // Modal state
+  const [activeProductId, setActiveProductId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = (id: number) => {
+    setActiveProductId(id);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setActiveProductId(null);
+    setIsModalOpen(false);
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -42,6 +52,7 @@ const ProductTable = () => {
       `Da li sigurno želiš da obrišeš proizvod "${name}"?`
     );
     if (!confirmed) return;
+
     try {
       await api.delete(`/products/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -150,8 +161,7 @@ const ProductTable = () => {
                   onClick={() => handleSort("categoryName")}
                 >
                   Kategorija{" "}
-                  {sortField === "categoryName" &&
-                    (sortOrder === "asc" ? "▲" : "▼")}
+                  {sortField === "categoryName" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
                 <th className="p-4 border-b border-gray-700 text-center">Akcije</th>
               </tr>
@@ -169,34 +179,17 @@ const ProductTable = () => {
                     key={product.id}
                     className="hover:bg-[#30304a] transition border-b border-gray-800 text-sm"
                   >
-                    <td className="p-4 font-medium text-gray-100">
-                      {product.name}
-                    </td>
-                    <td className="p-4 text-gray-300">
-                      {product.price.toFixed(2)} RSD
-                    </td>
+                    <td className="p-4 font-medium text-gray-100">{product.name}</td>
+                    <td className="p-4 text-gray-300">{product.price.toFixed(2)} RSD</td>
                     <td className="p-4 text-gray-400">{product.description}</td>
                     <td className="p-4 text-gray-200">{product.categoryName}</td>
                     <td className="p-4 flex justify-center gap-4">
-                      <button  onClick={openModal}
-                       className="flex items-center gap-1 text-blue-400 hover:text-blue-500 font-medium transition">
+                      <button
+                        onClick={() => openModal(product.id)}
+                        className="flex items-center gap-1 text-blue-400 hover:text-blue-500 font-medium transition"
+                      >
                         <Pencil size={16} /> Uredi
                       </button>
-                      {showModal && (
-                      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                        <div className="bg-[#1a2238] p-8 rounded-2xl shadow-2xl w-full max-w-2xl relative border border-blue-900/40">
-                          {/* Dugme za zatvaranje */}
-                          <button
-                            onClick={closeModal}
-                            className="absolute top-3 right-3 text-gray-400 hover:text-white"
-                          >
-                            ✕
-                          </button>
-
-                          <EditProductForm productId={product.id} onClose={closeModal} />
-                        </div>
-                      </div>
-                      )}
                       <button
                         onClick={() => handleDelete(product.id, product.name)}
                         className="flex items-center gap-1 text-red-400 hover:text-red-500 font-medium transition"
@@ -211,6 +204,7 @@ const ProductTable = () => {
           </table>
         </div>
 
+        {/* Pagination */}
         <div className="flex justify-center items-center gap-4 mt-8">
           <button
             onClick={prevPage}
@@ -240,6 +234,25 @@ const ProductTable = () => {
             Sledeća <ChevronRight size={18} />
           </button>
         </div>
+
+        {/* Edit Modal */}
+        {isModalOpen && activeProductId && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-[#1a2238] p-8 rounded-2xl shadow-2xl w-full max-w-2xl relative border border-blue-900/40">
+              <button
+                onClick={closeModal}
+                className="absolute top-3 right-3 text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+
+              <EditProductForm
+                productId={activeProductId}
+                onClose={closeModal}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
