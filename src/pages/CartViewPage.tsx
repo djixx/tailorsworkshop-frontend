@@ -15,7 +15,7 @@ type CartItem = {
 type ShoppingCartType = {
   id?: number;
   createdBy?: string;
-  items?: CartItem[]; // ⚠️ sad je optional da ne bi puklo ako backend ne pošalje
+  items?: CartItem[];
 };
 
 const CartView = () => {
@@ -26,7 +26,6 @@ const CartView = () => {
   const fetchCart = async () => {
     try {
       const res = await api.get("/cart");
-      // ⚠️ fallback na prazan niz ako backend ne pošalje items
       const cartData = res.data ?? {};
       if (!Array.isArray(cartData.items)) {
         cartData.items = [];
@@ -68,15 +67,20 @@ const CartView = () => {
   };
 
   const handleClearCart = async () => {
+    if (!cart?.id) return;
+
+    if (!window.confirm("Da li ste sigurni da želite obrisati sve artikle iz korpe?")) return;
+
     try {
-      await api.delete("/cart/clear");
+      await api.post(`/cart/clear/${cart.id}`);
       await fetchCart();
+      alert("Korpa je uspešno očišćena.");
     } catch (err) {
       console.error("Greška pri brisanju korpe:", err);
+      alert("Nije moguće očistiti korpu.");
     }
   };
 
-  // 🔹 Mapiranje JSON opcija u čitljive oznake
   const formatOptions = (optionsJson: string) => {
     try {
       const obj = JSON.parse(optionsJson);
@@ -97,7 +101,7 @@ const CartView = () => {
     }
   };
 
-  const items = cart?.items ?? []; // ⚠️ fallback da ne puca
+  const items = cart?.items ?? [];
   const subtotal = items.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
   const shipping = subtotal > 0 ? 350 : 0;
   const total = subtotal + shipping;
@@ -132,7 +136,6 @@ const CartView = () => {
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* LEFT SIDE */}
         <div className="lg:col-span-2 bg-[#1b263b] rounded-2xl shadow-lg p-6 border border-[#243b55]">
           <h2 className="text-xl font-semibold text-sky-300 mb-6">
             Vaši artikli
@@ -143,7 +146,6 @@ const CartView = () => {
               key={item.id}
               className="flex flex-col md:flex-row justify-between items-center bg-[#0f1e33] border border-[#243b55] rounded-xl p-5 mb-5 hover:border-sky-500 transition"
             >
-              {/* LEFT: DETAILS */}
               <div className="flex flex-col flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-sky-300 truncate">
                   {item.productName}
@@ -164,7 +166,6 @@ const CartView = () => {
                 </div>
               </div>
 
-              {/* RIGHT: PRICE + QTY + DELETE */}
               <div className="flex items-center justify-end gap-6 mt-4 md:mt-0 min-w-[220px]">
                 <div className="flex items-center gap-2">
                   <button
@@ -220,7 +221,6 @@ const CartView = () => {
           </button>
         </div>
 
-        {/* RIGHT SIDE */}
         <div className="bg-[#1b263b] rounded-2xl shadow-lg p-6 border border-[#243b55] h-fit">
           <h3 className="text-lg font-semibold text-sky-300 mb-4 text-center">
             Order Summary
