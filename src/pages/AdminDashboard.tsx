@@ -1,5 +1,15 @@
-import { useEffect, useState } from "react";
-import { Package, ChevronDown, ChevronUp, CheckCircle, AlertCircle } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import {
+  Package,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  SortAsc,
+  SortDesc,
+} from "lucide-react";
 import api from "../api/axiosConfig";
 
 type CartItem = {
@@ -17,7 +27,7 @@ type ShoppingCart = {
   status: string;
   createdOn?: string;
   reviewedOn?: string;
-  items?: CartItem[]; 
+  items?: CartItem[];
 };
 
 const AdminDashboard = () => {
@@ -27,6 +37,11 @@ const AdminDashboard = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("SUBMITTED");
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const fetchOrders = async (status: string) => {
     setLoading(true);
@@ -45,6 +60,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchOrders(selectedStatus);
+    setCurrentPage(1);
   }, [selectedStatus]);
 
   const handleStatusChange = async (cartId: number, newStatus: string) => {
@@ -82,8 +98,23 @@ const AdminDashboard = () => {
   };
 
   const toggleExpand = (id: number) => {
-    setExpandedOrderId((prev) => (prev === Number(id) ? null : Number(id)));
+    setExpandedOrderId((prev) => (prev === id ? null : id));
   };
+
+  const sortedOrders = useMemo(() => {
+    return [...orders].sort((a, b) => {
+      const dateA = new Date(a.createdOn || "").getTime();
+      const dateB = new Date(b.createdOn || "").getTime();
+      return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+    });
+  }, [orders, sortOrder]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
+  const currentOrders = sortedOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   if (loading)
     return <p className="text-gray-300 text-center mt-10">Učitavanje porudžbina...</p>;
@@ -91,60 +122,81 @@ const AdminDashboard = () => {
     return <p className="text-red-400 text-center mt-10">{error}</p>;
 
   return (
-    <div className="bg-[#1e1e2f] text-gray-100 p-8 rounded-lg shadow-2xl w-full max-w-6xl mx-auto">
-      <h2 className="text-3xl font-bold text-blue-400 mb-8 text-center flex items-center justify-center gap-2">
-        <Package size={28} />
-        Admin Dashboard
-      </h2>
-
-      <div className="flex flex-wrap justify-center gap-3 mb-8">
-        {["SUBMITTED", "APPROVED", "DENIED"].map((status) => (
-          <button
-            key={status}
-            onClick={() => setSelectedStatus(status)}
-            className={`px-4 py-2 rounded-md font-medium transition ${
-              selectedStatus === status
-                ? "bg-blue-600 text-white"
-                : "bg-[#2a2a3d] text-gray-300 hover:bg-[#32324a]"
-            }`}
-          >
-            {status}
-          </button>
-        ))}
+    <div className="bg-gradient-to-b from-[#0b1320] to-[#1b263b] text-gray-100 min-h-screen py-12 px-6">
+      {/* HEADER */}
+      <div className="flex justify-center items-center gap-3 mb-10">
+        <Package size={34} className="text-sky-400" />
+        <h2 className="text-4xl font-bold text-sky-400 tracking-wide">
+          ADMIN DASHBOARD
+        </h2>
       </div>
 
+      {/* FILTERS */}
+      <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-10">
+        <div className="flex gap-3">
+          {["SUBMITTED", "APPROVED", "DENIED"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setSelectedStatus(status)}
+              className={`px-6 py-2.5 rounded-xl font-semibold text-sm tracking-wide transition-all ${
+                selectedStatus === status
+                  ? "bg-sky-600 text-white shadow-lg shadow-sky-800/40 scale-105"
+                  : "bg-[#1f2a40] text-gray-300 hover:bg-[#243b55]"
+              }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1f2a40] text-gray-300 hover:bg-[#243b55] transition"
+        >
+          {sortOrder === "desc" ? (
+            <>
+              <SortDesc size={18} className="text-sky-400" /> Najnovije
+            </>
+          ) : (
+            <>
+              <SortAsc size={18} className="text-sky-400" /> Najstarije
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* MESSAGE */}
       {message && (
-        <div className="text-center mb-4 flex justify-center items-center gap-2">
+        <div className="text-center mb-6 flex justify-center items-center gap-2 animate-fade-in">
           <CheckCircle className="text-green-400" size={18} />
           <p className="text-green-400 font-medium">{message}</p>
         </div>
       )}
 
-      {orders.length === 0 ? (
-        <div className="text-center text-gray-400">
-          <AlertCircle className="mx-auto mb-2 text-blue-400" size={40} />
-          <h3 className="text-2xl font-semibold text-blue-400">
+      {/* ORDERS */}
+      {currentOrders.length === 0 ? (
+        <div className="text-center text-gray-400 mt-10">
+          <AlertCircle className="mx-auto mb-3 text-sky-400" size={42} />
+          <h3 className="text-2xl font-semibold text-sky-400">
             Nema porudžbina sa statusom {selectedStatus}.
           </h3>
         </div>
       ) : (
-        <div className="space-y-6">
-          {orders.map((order) => (
+        <div className="space-y-8 max-w-6xl mx-auto">
+          {currentOrders.map((order) => (
             <div
               key={order.id}
-              className="border border-gray-700 rounded-xl p-6 bg-[#2a2a3d] hover:bg-[#32324a] transition-all duration-300 shadow-md"
+              className="bg-[#1b2436]/80 border border-[#243b55] backdrop-blur-md rounded-2xl p-6 shadow-md hover:shadow-sky-800/20 transition-all duration-500"
             >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div className="flex flex-col md:flex-row justify-between md:items-center">
                 <div>
-                  <h3 className="text-xl font-semibold text-blue-300">
+                  <h3 className="text-xl font-semibold text-sky-300">
                     Porudžbina #{order.id}
                   </h3>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-400 text-sm mt-1">
                     Kreirana: {order.createdOn || "Nepoznato"}
                   </p>
-                  <p className="text-gray-400 text-sm">
-                    Korisnik: {order.createdBy}
-                  </p>
+                  <p className="text-gray-400 text-sm">Korisnik: {order.createdBy}</p>
                   <p className="text-gray-400 text-sm">
                     Status:{" "}
                     <span
@@ -161,13 +213,12 @@ const AdminDashboard = () => {
                   </p>
                 </div>
 
-                {/* Dugmad */}
-                <div className="mt-4 md:mt-0 flex gap-3 items-center">
+                <div className="mt-4 md:mt-0 flex flex-wrap gap-3 items-center">
                   <button
-                    onClick={() => toggleExpand(Number(order.id))}
-                    className="flex items-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+                    onClick={() => toggleExpand(order.id)}
+                    className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-medium transition"
                   >
-                    {expandedOrderId === Number(order.id) ? (
+                    {expandedOrderId === order.id ? (
                       <>
                         <ChevronUp size={18} /> Sakrij detalje
                       </>
@@ -181,7 +232,7 @@ const AdminDashboard = () => {
                   <select
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     defaultValue=""
-                    className="bg-[#1f2a40] border border-blue-600 text-gray-200 p-2 rounded-md"
+                    className="bg-[#1f2a40] border border-sky-700 text-gray-200 p-2 rounded-lg"
                   >
                     <option value="" disabled>
                       Promeni status
@@ -192,53 +243,76 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Detalji porudžbine */}
-              {expandedOrderId === Number(order.id) && (
-                <div className="mt-6 border-t border-gray-700 pt-4">
-                  <h4 className="text-lg font-semibold text-blue-400 mb-3">
+              {expandedOrderId === order.id && (
+                <div className="mt-6 border-t border-gray-700 pt-5 space-y-4">
+                  <h4 className="text-lg font-semibold text-sky-400 mb-3">
                     Stavke porudžbine
                   </h4>
 
                   {order.items && order.items.length > 0 ? (
-                    order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-4 bg-[#1f2a40] rounded-lg mb-3 border border-gray-600"
-                      >
-                        <h5 className="font-semibold text-blue-300 text-lg mb-2">
-                          {item.productName}
-                        </h5>
-
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {formatOptions(item.optionsJson).map((opt, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-2 bg-[#283046] px-3 py-1 rounded-full text-sm border border-gray-600 shadow-sm"
-                            >
-                              <span className="text-blue-300 font-medium">
-                                {opt.label}:
-                              </span>
-                              <span className="text-gray-100">{opt.value}</span>
-                            </span>
-                          ))}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {order.items.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-4 bg-[#1f2a40] rounded-xl border border-[#2c3e55] hover:border-sky-600 transition"
+                        >
+                          <h5 className="font-semibold text-sky-300 text-lg mb-2">
+                            {item.productName}
+                          </h5>
+                          <p className="text-gray-300 text-sm">
+                            Količina: {item.quantity}
+                          </p>
+                          <p className="text-gray-300 text-sm">
+                            Cena po komadu: {item.productPrice.toFixed(2)} RSD
+                          </p>
+                          <p className="text-sky-400 font-semibold">
+                            Ukupno: {item.totalPrice.toFixed(2)} RSD
+                          </p>
                         </div>
-
-                        <p className="text-gray-300">Količina: {item.quantity}</p>
-                        <p className="text-gray-300">
-                          Cena po komadu: {item.productPrice.toFixed(2)} RSD
-                        </p>
-                        <p className="text-blue-400 font-semibold">
-                          Ukupno: {item.totalPrice.toFixed(2)} RSD
-                        </p>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   ) : (
-                    <p className="text-gray-400 italic">Nema stavki u ovoj porudžbini.</p>
+                    <p className="text-gray-400 italic">
+                      Nema stavki u ovoj porudžbini.
+                    </p>
                   )}
                 </div>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3 mt-10">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+              currentPage === 1
+                ? "bg-[#1f2a40] text-gray-500 cursor-not-allowed"
+                : "bg-sky-700 hover:bg-sky-800 text-white"
+            }`}
+          >
+            <ArrowLeft size={16} /> Prethodna
+          </button>
+
+          <span className="text-gray-300">
+            Stranica {currentPage} od {totalPages}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+              currentPage === totalPages
+                ? "bg-[#1f2a40] text-gray-500 cursor-not-allowed"
+                : "bg-sky-700 hover:bg-sky-800 text-white"
+            }`}
+          >
+            Sledeća <ArrowRight size={16} />
+          </button>
         </div>
       )}
     </div>

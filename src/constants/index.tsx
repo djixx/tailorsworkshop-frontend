@@ -1,14 +1,25 @@
 import { Heart, MapPinCheckInside, Rabbit, Scissors } from "lucide-react";
 
 
-export const navItems = [ 
+import bagImg from "../assets/bag.jpg";
+import pantsImg from "../assets/pants.jpg";
+import skirtImg from "../assets/skirt.jpg";
+
+
+export const navItems = [
   { label: "Pocetna", href: "/" },
   { label: "Proizvodi", href: "/products" },
   { label: "Korpa", href: "/cart" },
   { label: "Dashboard", href: "/userDashboard" },
   { label: "Admin", href: "/adminDashboard" },
+  { label: "Transaction", href: "/adminTransactionsPage" },
 ];
 
+export const categoryImages: Record<string, string> = {
+  bag: bagImg,
+  pants: pantsImg,
+  skirt: skirtImg,
+};
 
 export const features = [
   {
@@ -32,49 +43,39 @@ export const features = [
   {
     icon: <Rabbit />,
     text: "Brza isporuka",
-    description:
-      "Uprkos ručnoj proizvodnji, garantujemo isporuku za 7-10 dana",
+    description: "Uprkos ručnoj proizvodnji, garantujemo isporuku za 7-10 dana",
   },
 ];
 
 export const checklistItems = [
   {
     title: "Odaberite proizvod",
-    description:
-      "Izaberite šta želite da poručite iz naše ponude",
+    description: "Izaberite šta želite da poručite iz naše ponude",
   },
   {
     title: "Unesite mere",
-    description:
-      "Definisite tačne dimenzije koje vam odgovaraju",
+    description: "Definisite tačne dimenzije koje vam odgovaraju",
   },
   {
     title: "Dobijte proizvod",
-    description:
-      "Za 7-10 dana dobićete proizvod sašiven po vašoj meri",
-  }
+    description: "Za 7-10 dana dobićete proizvod sašiven po vašoj meri",
+  },
 ];
 
 export const resourcesLinks = [
-  { href: "#", text: "Getting Started" },
-  { href: "#", text: "Documentation" },
-  { href: "#", text: "Tutorials" },
-  { href: "#", text: "API Reference" },
-  { href: "#", text: "Community Forums" },
+  { href: "#", text: "O nama" },
+  { href: "#", text: "Vodič kroz veličine" },
+  { href: "#", text: "Materijali i nega tkanine" },
+  { href: "#", text: "Kontakt i podrška" },
 ];
 
 export const platformLinks = [
-  { href: "#", text: "Features" },
-  { href: "#", text: "Supported Devices" },
-  { href: "#", text: "System Requirements" },
-  { href: "#", text: "Downloads" },
-  { href: "#", text: "Release Notes" },
+  { href: "#", text: "Kreiraj svoj proizvod" },
+  { href: "#", text: "Kolekcije" }
 ];
 
 export const communityLinks = [
-  { href: "#", text: "Events" },
-  { href: "#", text: "Meetups" },
-  { href: "#", text: "Conferences" },
-  { href: "#", text: "Hackathons" },
-  { href: "#", text: "Jobs" },
+  { href: "#", text: "Utisci kupaca" },
+  { href: "#", text: "Saradnje i partnerstva" },
+  { href: "#", text: "Pridruži se zajednici" }
 ];

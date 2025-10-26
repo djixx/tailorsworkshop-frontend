@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+﻿import { useEffect, useState } from "react";
+import { ShoppingCart, Plus, Minus, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 
 type CartItem = {
@@ -11,33 +12,29 @@ type CartItem = {
   optionsJson: string;
 };
 
-type ShoppingCart = {
+type ShoppingCartType = {
   id?: number;
   createdBy?: string;
-  items: CartItem[];
+  items?: CartItem[]; // ⚠️ sad je optional da ne bi puklo ako backend ne pošalje
 };
 
 const CartView = () => {
-  const [cart, setCart] = useState<ShoppingCart | null>(null);
+  const [cart, setCart] = useState<ShoppingCartType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  // 🔹 Učitavanje korpe
   const fetchCart = async () => {
     try {
-      const res = await api.get(`/cart`);
-      setCart(res.data);
-      setError(null);
-    } catch (err: any) {
-      console.error("Greška pri učitavanju korpe:", err);
-      if (err.response?.status === 404) {
-        setCart(null);
-        setError(null);
-      } else {
-        setError("Došlo je do greške pri učitavanju korpe.");
+      const res = await api.get("/cart");
+      // ⚠️ fallback na prazan niz ako backend ne pošalje items
+      const cartData = res.data ?? {};
+      if (!Array.isArray(cartData.items)) {
+        cartData.items = [];
       }
+      setCart(cartData);
+    } catch (err) {
+      console.error("Greška pri učitavanju korpe:", err);
+      setCart({ items: [] });
     } finally {
       setLoading(false);
     }
@@ -47,243 +44,211 @@ const CartView = () => {
     fetchCart();
   }, []);
 
-  const items = cart?.items || [];
-
-  // 🔹 Lepo formatirane opcije
-  const formatOptions = (
-    optionsJson: string
-  ): { label: string; value: string }[] => {
+  const handleUpdateItem = async (itemId: number, data: any) => {
     try {
-      const obj = JSON.parse(optionsJson) as Record<string, string>;
+      await api.put(`/cart/update/${itemId}`, data);
+      await fetchCart();
+    } catch (err) {
+      console.error("Greška pri ažuriranju artikla:", err);
+    }
+  };
+
+  const handleRemoveItem = async (itemId: number, item: CartItem) => {
+    try {
+      await api.put(`/cart/update/${itemId}`, {
+        productId: item.id,
+        delete: true,
+        quantity: item.quantity,
+        selectedChoiceMap: {},
+      });
+      await fetchCart();
+    } catch (err) {
+      console.error("Greška pri uklanjanju artikla:", err);
+    }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      await api.delete("/cart/clear");
+      await fetchCart();
+    } catch (err) {
+      console.error("Greška pri brisanju korpe:", err);
+    }
+  };
+
+  // 🔹 Mapiranje JSON opcija u čitljive oznake
+  const formatOptions = (optionsJson: string) => {
+    try {
+      const obj = JSON.parse(optionsJson);
       const map: Record<string, string> = {
         COLOR: "Boja",
         LENGTH: "Dužina",
         MATERIAL: "Materijal",
         SIZE: "Veličina",
+        PATTERN: "Šara",
+        WAIST_TYPE: "Tip struka",
       };
       return Object.entries(obj).map(([key, value]) => ({
         label: map[key.toUpperCase()] || key,
-        value: value,
+        value: value as string,
       }));
     } catch {
       return [];
     }
   };
 
-  /** 🔧 PUT /cart/update/{itemId} */
-  const handleUpdateItem = async (itemId: number, updateData: any) => {
-    try {
-      await api.put(`cart/update/${itemId}`, updateData);
-      await fetchCart();
-    } catch (err) {
-      console.error("Greška pri ažuriranju stavke:", err);
-      setMessage("Greška pri ažuriranju stavke.");
-    }
-  };
-
-  /** ✏️ Izmena količine */
-  const handleEdit = async (item: CartItem) => {
-    if (!item.id) return;
-
-    const novaKolicina = prompt(
-      `Unesi novu količinu za "${item.productName}":`,
-      item.quantity.toString()
-    );
-    if (!novaKolicina) return;
-
-    const parsedOptions =
-      item.optionsJson && item.optionsJson.trim() !== "{}"
-        ? JSON.parse(item.optionsJson)
-        : {};
-
-    const requestBody = {
-      productId: item.id,
-      delete: false,
-      selectedChoiceMap: parsedOptions,
-      quantity: parseInt(novaKolicina),
-    };
-
-    await handleUpdateItem(item.id, requestBody);
-    setMessage(`✅ Izmenjena količina za ${item.productName}.`);
-  };
-
-  /** 🗑️ Brisanje stavke */
-  const handleRemove = async (item: CartItem) => {
-    if (!item.id) return;
-    const confirmDelete = confirm(
-      `Da li želiš da ukloniš "${item.productName}" iz korpe?`
-    );
-    if (!confirmDelete) return;
-
-    const parsedOptions =
-      item.optionsJson && item.optionsJson.trim() !== "{}"
-        ? JSON.parse(item.optionsJson)
-        : {};
-
-    const requestBody = {
-      productId: item.id,
-      delete: true,
-      selectedChoiceMap: parsedOptions,
-      quantity: item.quantity,
-    };
-
-    await handleUpdateItem(item.id, requestBody);
-    setMessage(`🗑️ ${item.productName} je uklonjen iz korpe.`);
-  };
-
-  /** 🧾 Slanje kompletne korpe */
-  const handleSubmit = async () => {
-    if (!cart) return;
-
-    setSubmitting(true);
-    setMessage(null);
-
-    try {
-      await api.post(`/cart/submit`, cart);
-
-      setMessage("✅ Korpa uspešno poslata!");
-      setCart(null);
-
-      setTimeout(async () => {
-        await fetchCart();
-        setMessage("🆕 Nova korpa je spremna!");
-      }, 800);
-    } catch (err) {
-      console.error("Greška pri slanju korpe:", err);
-      setMessage("Došlo je do greške pri slanju korpe.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
+  const items = cart?.items ?? []; // ⚠️ fallback da ne puca
   const subtotal = items.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+  const shipping = subtotal > 0 ? 350 : 0;
+  const total = subtotal + shipping;
 
-  // 🔹 Stati prikazi
   if (loading)
     return (
-      <p className="text-gray-300 text-center mt-10">⏳ Učitavanje korpe...</p>
+      <p className="text-center text-blue-200 mt-10">Učitavanje korpe...</p>
     );
 
-  if (error)
-    return <p className="text-red-400 text-center mt-10">{error}</p>;
-
-  if (!cart || items.length === 0)
+  if (!items.length)
     return (
-      <div className="bg-[#1e1e2f] text-gray-100 p-8 rounded-lg shadow-xl w-full max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl font-bold text-blue-400 mb-4">
-          Vaša korpa je prazna 🛒
-        </h2>
-        <p className="text-gray-400">
-          Dodajte proizvode kako biste započeli novu porudžbinu.
-        </p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-[#1b263b] text-blue-100 p-10 rounded-2xl shadow-lg max-w-3xl text-center">
+          <ShoppingCart className="mx-auto mb-4 text-sky-400" size={48} />
+          <h2 className="text-2xl font-bold text-sky-300 mb-2">
+            Vaša korpa je prazna
+          </h2>
+          <p className="text-blue-200">
+            Dodajte proizvode kako biste započeli porudžbinu.
+          </p>
+        </div>
       </div>
     );
 
-  // 🔹 Glavni prikaz
   return (
-    <div className="bg-[#1e1e2f] text-gray-100 p-8 rounded-lg shadow-2xl w-full max-w-3xl mx-auto">
-      <h2 className="text-3xl font-bold text-blue-400 mb-8 text-center">
-        Vaša korpa
-      </h2>
+    <div className="min-h-screen bg-[#0d1b2a] text-blue-100 py-12 px-6">
+      <div className="flex justify-center items-center gap-3 mb-10">
+        <ShoppingCart size={40} className="text-sky-400" />
+        <h1 className="text-4xl font-bold text-sky-400 tracking-wide">
+          SHOPPING CART
+        </h1>
+      </div>
 
-      <div className="space-y-6">
-        {items.map((item, index) => (
-          <div
-            key={item.id || index}
-            className="flex flex-col md:flex-row justify-between items-start md:items-center border border-gray-700 rounded-lg p-6 bg-[#2a2a3d] hover:bg-[#32324a] transition-all duration-300 shadow-md"
-          >
-            <div className="flex-1 w-full">
-              <h3 className="text-xl font-semibold text-blue-300 mb-3">
-                {item.productName}
-              </h3>
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* LEFT SIDE */}
+        <div className="lg:col-span-2 bg-[#1b263b] rounded-2xl shadow-lg p-6 border border-[#243b55]">
+          <h2 className="text-xl font-semibold text-sky-300 mb-6">
+            Vaši artikli
+          </h2>
 
-              {/* 🔹 Prikaz opcija u badge stilu */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {formatOptions(item.optionsJson).length > 0 ? (
-                  formatOptions(item.optionsJson).map((opt, i) => (
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex flex-col md:flex-row justify-between items-center bg-[#0f1e33] border border-[#243b55] rounded-xl p-5 mb-5 hover:border-sky-500 transition"
+            >
+              {/* LEFT: DETAILS */}
+              <div className="flex flex-col flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-sky-300 truncate">
+                  {item.productName}
+                </h3>
+                <p className="text-blue-100 text-sm mt-1">
+                  Cena: {item.productPrice.toFixed(2)} RSD
+                </p>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formatOptions(item.optionsJson).map((opt, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-2 bg-[#283046] px-3 py-1 rounded-full text-sm border border-gray-600 shadow-sm"
+                      className="bg-[#1e293b] border border-[#334155] text-blue-200 text-xs px-3 py-1 rounded-full shadow-sm"
                     >
-                      <span className="text-blue-300 font-medium">
-                        {opt.label}:
-                      </span>
-                      <span className="text-gray-100">{opt.value}</span>
+                      {opt.label}: {opt.value}
                     </span>
-                  ))
-                ) : (
-                  <span className="text-gray-500 italic">
-                    Nema dodatnih opcija
+                  ))}
+                </div>
+              </div>
+
+              {/* RIGHT: PRICE + QTY + DELETE */}
+              <div className="flex items-center justify-end gap-6 mt-4 md:mt-0 min-w-[220px]">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      handleUpdateItem(item.id!, {
+                        productId: item.id,
+                        delete: false,
+                        quantity: Math.max(1, item.quantity - 1),
+                        selectedChoiceMap: {},
+                      })
+                    }
+                    className="w-8 h-8 flex items-center justify-center bg-[#1e293b] hover:bg-[#334155] rounded-md text-blue-200"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="w-6 text-center font-semibold text-blue-50">
+                    {item.quantity}
                   </span>
-                )}
-              </div>
+                  <button
+                    onClick={() =>
+                      handleUpdateItem(item.id!, {
+                        productId: item.id,
+                        delete: false,
+                        quantity: item.quantity + 1,
+                        selectedChoiceMap: {},
+                      })
+                    }
+                    className="w-8 h-8 flex items-center justify-center bg-[#1e293b] hover:bg-[#334155] rounded-md text-blue-200"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
 
-              <p className="text-gray-300">
-                Količina:{" "}
-                <span className="font-medium">{item.quantity}</span>
-              </p>
-            </div>
+                <p className="text-sky-400 font-semibold w-[80px] text-right">
+                  {item.totalPrice.toFixed(2)} RSD
+                </p>
 
-            <div className="mt-6 md:mt-0 text-right w-full md:w-auto">
-              <p className="text-gray-400 text-sm">Cena po komadu</p>
-              <p className="text-lg font-bold text-green-400">
-                {item.productPrice?.toFixed(2)} RSD
-              </p>
-
-              <p className="text-gray-400 text-sm mt-2">Ukupno</p>
-              <p className="text-lg font-bold text-blue-400 mb-3">
-                {item.totalPrice?.toFixed(2)} RSD
-              </p>
-
-              <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => handleEdit(item)}
-                  className="p-2 rounded-md bg-white hover:bg-blue-600 hover:text-white text-black transition"
-                  title="Izmeni stavku"
+                  onClick={() => handleRemoveItem(item.id!, item)}
+                  className="text-red-400 hover:text-red-600 transition"
                 >
-                  <Pencil size={18} />
-                </button>
-                <button
-                  onClick={() => handleRemove(item)}
-                  className="p-2 rounded-md bg-red-500 hover:bg-red-700 text-white transition"
-                  title="Ukloni stavku"
-                >
-                  <Trash2 size={18} />
+                  <Trash2 size={20} />
                 </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
 
-      {/* 🔹 Ukupno */}
-      <div className="mt-10 bg-[#1f2a40] border border-blue-600 rounded-xl p-6 shadow-lg">
-        <h3 className="text-2xl font-bold text-white mb-4 text-center">
-          🧾 Ukupno
-        </h3>
-
-        <div className="space-y-3 text-gray-200 text-sm">
-          <div className="flex justify-between pt-2 text-lg font-bold text-blue-300">
-            <span>Za plaćanje:</span>
-            <span>{subtotal.toFixed(2)} RSD</span>
-          </div>
+          <button
+            onClick={handleClearCart}
+            className="w-full mt-6 py-3 border border-red-500 text-red-400 font-semibold rounded-xl hover:bg-red-600 hover:text-white transition shadow-md"
+          >
+            OČISTI KORPU
+          </button>
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className={`mt-6 w-full py-3 rounded-lg font-semibold tracking-wide transition ${
-            submitting
-              ? "bg-blue-800 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-          }`}
-        >
-          {submitting ? " Slanje narudžbine..." : " Potvrdi narudžbinu"}
-        </button>
+        {/* RIGHT SIDE */}
+        <div className="bg-[#1b263b] rounded-2xl shadow-lg p-6 border border-[#243b55] h-fit">
+          <h3 className="text-lg font-semibold text-sky-300 mb-4 text-center">
+            Order Summary
+          </h3>
 
-        {message && (
-          <p className="mt-4 text-center text-sm text-gray-300">{message}</p>
-        )}
+          <div className="space-y-3 text-blue-200">
+            <div className="flex justify-between">
+              <span>Subtotal:</span>
+              <span>{subtotal.toFixed(2)} RSD</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Dostava:</span>
+              <span>{shipping.toFixed(2)} RSD</span>
+            </div>
+            <div className="border-t border-[#334155] my-3"></div>
+            <div className="flex justify-between text-sky-300 font-bold text-lg">
+              <span>Ukupno:</span>
+              <span>{total.toFixed(2)} RSD</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate("/stripe")}
+            className="w-full mt-6 py-3 bg-green-600 hover:bg-green-700 font-semibold rounded-xl text-white shadow-md transition"
+          >
+            NASTAVI NA PLAĆANJE
+          </button>
+        </div>
       </div>
     </div>
   );

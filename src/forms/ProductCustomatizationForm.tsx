@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import api from "../api/axiosConfig"; // koristi konfigurisan axios sa tokenom
+import { useEffect, useState, useContext } from "react";
+import api from "../api/axiosConfig";
+import ToastMessage from "../components/ToastMessage";
+import { AuthContext } from "../context/AuthContext"; 
+import { Package, X, ShoppingCart } from "lucide-react";
 
 type ProductDetails = {
   id: number;
@@ -20,12 +23,22 @@ const formatLabel = (label: string) => {
   switch (label.toUpperCase()) {
     case "COLOR":
       return "Boja";
-    case "LENGTH":
-      return "Dužina";
     case "MATERIAL":
       return "Materijal";
     case "SIZE":
       return "Veličina";
+    case "LENGTH":
+      return "Dužina";
+    case "WAIST_TYPE":
+      return "Tip struka";
+    case "POCKETS":
+      return "Džepovi";
+    case "STRAP_TYPE":
+      return "Tip kaiša / naramenica";
+    case "LINING_MATERIAL":
+      return "Postava";
+    case "PATTERN":
+      return "Dezen / šara";
     default:
       return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
   }
@@ -35,11 +48,14 @@ const ProductCustomizationForm = ({ productId, onClose }: Props) => {
   const [details, setDetails] = useState<ProductDetails | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const { email } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await api.get(`/products/${productId}`); // automatski šalje Bearer token
+        const res = await api.get(`/products/${productId}`);
         setDetails(res.data);
       } catch (err) {
         console.error("Greška pri učitavanju proizvoda:", err);
@@ -47,7 +63,6 @@ const ProductCustomizationForm = ({ productId, onClose }: Props) => {
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [productId]);
 
@@ -65,84 +80,111 @@ const ProductCustomizationForm = ({ productId, onClose }: Props) => {
     const missing = requiredKeys.filter((key) => !selectedOptions[key]);
 
     if (missing.length > 0) {
-      alert("Molimo vas da izaberete sve opcije pre slanja narudžbine.");
+      setToastMessage("Molimo vas da izaberete sve opcije pre dodavanja u korpu.");
+      setToastVisible(true);
       return;
     }
 
     const payload = {
-      email: "djixx@gmail.com", // možeš kasnije da uzmeš iz konteksta korisnika
+      email: email ?? "user@gmail.com",
       selectedChoiceMap: selectedOptions,
     };
 
     try {
-      const res = await api.post(`/cart/add/${productId}`, payload);
-      console.log("Dodato u korpu:", res.data);
-      alert("Proizvod je uspešno dodat u korpu!");
-      onClose();
+      await api.post(`/cart/add/${productId}`, payload);
+      setToastMessage("Proizvod je uspešno dodat u korpu!");
+      setToastVisible(true);
+      setTimeout(() => onClose(), 1000);
     } catch (error) {
       console.error("Greška pri slanju narudžbine:", error);
-      alert("Došlo je do greške. Pokušajte ponovo.");
+      setToastMessage("Došlo je do greške. Pokušajte ponovo.");
+      setToastVisible(true);
     }
   };
 
   if (loading || !details) {
-    return <p className="text-gray-300">Učitavanje forme...</p>;
+    return <p className="text-gray-300 text-center mt-10">Učitavanje forme...</p>;
   }
 
   return (
-    <div className="bg-[#1e1e2f] text-gray-100 p-6 rounded-lg shadow-xl w-full">
-      <h2 className="text-2xl font-bold text-blue-400 mb-4">
-        Prilagodi: {details.name}
-      </h2>
+    <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+      <div className="relative max-h-[90vh] overflow-y-auto mx-4 w-full max-w-lg bg-[#0f172a] text-gray-100 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.7)] border border-blue-900/40 p-8 transition-all duration-500 animate-fadeIn scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-transparent hover:scrollbar-thumb-blue-500">
+        
+        {/* Close dugme */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition"
+        >
+          <X size={22} />
+        </button>
 
-      <p className="mb-2 text-gray-300">{details.description}</p>
-      <p className="mb-6 text-blue-300 font-semibold">
-        Cena: {details.price.toFixed(2)} RSD
-      </p>
+        {/* Naslov */}
+        <div className="flex items-center gap-2 mb-6">
+          <Package className="text-blue-500" size={22} />
+          <h2 className="text-2xl font-semibold text-blue-400">Prilagodi proizvod</h2>
+        </div>
 
-      <div className="space-y-4">
-        {Object.entries(details.optionChoiceMap).map(([optionType, choices]) => (
-          <div key={optionType}>
-            <label className="block font-medium text-gray-200 mb-1">
-              {formatLabel(optionType)}
-            </label>
+        {/* Detalji proizvoda */}
+        <h3 className="text-xl font-semibold text-gray-100 mb-1">{details.name}</h3>
+        <p className="mb-3 text-gray-400">{details.description}</p>
+        <p className="mb-6 text-blue-400 font-bold text-lg">
+          Cena: {details.price.toFixed(2)} RSD
+        </p>
 
-            {optionType === "LENGTH" ? (
-              <input
-                type="number"
-                min={20}
-                max={60}
-                placeholder="npr. 35"
-                className="w-full border border-gray-700 rounded px-3 py-2 bg-[#2a2a3d] text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedOptions[optionType] || ""}
-                onChange={(e) => handleChange(optionType, e.target.value)}
-              />
-            ) : (
-              <select
-                className="w-full border border-gray-700 rounded px-3 py-2 bg-[#2a2a3d] text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedOptions[optionType] || ""}
-                onChange={(e) => handleChange(optionType, e.target.value)}
-              >
-                <option value="" className="text-gray-400">
-                  Odaberite {formatLabel(optionType).toLowerCase()}
-                </option>
-                {Object.entries(choices).map(([id, name]) => (
-                  <option key={id} value={name} className="text-gray-100 bg-[#2a2a3d]">
-                    {name}
+        {/* Forma */}
+        <div className="space-y-5">
+          {Object.entries(details.optionChoiceMap).map(([optionType, choices]) => (
+            <div key={optionType}>
+              <label className="block font-medium text-gray-200 mb-2">
+                {formatLabel(optionType)}
+              </label>
+
+              {optionType === "LENGTH" ? (
+                <input
+                  type="number"
+                  min={20}
+                  max={60}
+                  placeholder="npr. 35"
+                  className="w-full border border-gray-700 rounded-md px-3 py-2 bg-[#1e293b] text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  value={selectedOptions[optionType] || ""}
+                  onChange={(e) => handleChange(optionType, e.target.value)}
+                />
+              ) : (
+                <select
+                  className="w-full border border-gray-700 rounded-md px-3 py-2 bg-[#1e293b] text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  value={selectedOptions[optionType] || ""}
+                  onChange={(e) => handleChange(optionType, e.target.value)}
+                >
+                  <option value="" className="text-gray-400">
+                    Odaberite {formatLabel(optionType).toLowerCase()}
                   </option>
-                ))}
-              </select>
-            )}
-          </div>
-        ))}
-      </div>
+                  {Object.entries(choices).map(([id, name]) => (
+                    <option key={id} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          ))}
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        className="mt-8 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-      >
-        Pošaljite narudžbinu
-      </button>
+        {/* Dugme */}
+        <button
+          onClick={handleSubmit}
+          className="mt-8 w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-3 rounded-lg font-semibold shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+        >
+          <ShoppingCart size={20} /> Dodaj u korpu
+        </button>
+
+        {/* Toast */}
+        <ToastMessage
+          isVisible={toastVisible}
+          message={toastMessage}
+          type={toastMessage.includes("greške") ? "error" : "success"}
+          onClose={() => setToastVisible(false)}
+        />
+      </div>
     </div>
   );
 };

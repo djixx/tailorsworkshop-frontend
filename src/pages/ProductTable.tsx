@@ -101,7 +101,7 @@ const ProductTable = () => {
   if (error) return <p className="text-red-400 text-center mt-20">{error}</p>;
 
   return (
-    <div className="min-h-screen bg-[#1e1e2f] flex justify-center pt-20 pb-32">
+    <div className="min-h-screen bg-[#1e1e2f] flex justify-center pt-10 pb-40">
       <div className="bg-[#24243a] text-gray-100 p-10 rounded-2xl shadow-2xl w-full max-w-6xl mx-auto border border-gray-700">
         <h2 className="text-3xl font-bold text-blue-400 mb-8 text-center tracking-wide">
           Lista proizvoda

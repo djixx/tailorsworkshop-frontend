@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import api from "../api/axiosConfig"; // koristi api umesto axios
+import api from "../api/axiosConfig"; 
 
 type ProductDetails = {
   id: number;
@@ -20,7 +20,7 @@ const ProductDetailsPage = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await api.get(`/products/${id}`); // api automatski dodaje Bearer token
+        const res = await api.get(`/products/${id}`); 
         setProduct(res.data);
       } catch (err: any) {
         console.error("Greška pri dohvaćanju detalja proizvoda:", err);

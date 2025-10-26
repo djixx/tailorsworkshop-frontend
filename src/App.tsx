@@ -17,6 +17,9 @@ import { AuthProvider } from "./context/AuthContext";
 import AdminPage from "./pages/AdminPage";
 import AddProductForm from "./forms/AddProductForm";
 import ProductTable from "./pages/ProductTable";
+import StripePage from "./pages/StripePage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import AdminTransactionsPage from "./pages/AdminTransactionPage";
 
 function App() {
   return (
@@ -51,6 +54,9 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/add-product" element={<AddProductForm />} />
           <Route path="/productTable" element={<ProductTable />} />
+          <Route path="/stripe" element={<StripePage />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/adminTransactionsPage" element={<AdminTransactionsPage />} />
         </Routes>
       </Router>
     </AuthProvider>
