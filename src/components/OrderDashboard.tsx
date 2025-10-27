@@ -91,7 +91,6 @@ const OrderDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0d1b2a] text-blue-100 py-12 px-6">
-      {/* HEADER */}
       <div className="flex justify-center items-center gap-3 mb-10">
         <ClipboardList size={38} className="text-sky-400" />
         <h2 className="text-4xl font-bold text-sky-400 tracking-wide">
@@ -99,9 +98,7 @@ const OrderDashboard = () => {
         </h2>
       </div>
 
-      {/* MAIN CONTAINER */}
       <div className="max-w-6xl mx-auto bg-[#1b263b] rounded-2xl shadow-lg p-8 border border-[#243b55]">
-        {/* Tabs */}
         <div className="flex justify-center mb-8 space-x-4">
           {["ACTIVE", "SUBMITTED", "REVIEWED"].map((tab) => (
             <button
@@ -132,7 +129,6 @@ const OrderDashboard = () => {
           ))}
         </div>
 
-        {/* Orders */}
         {loading ? (
           <p className="text-blue-300 text-center">Učitavanje porudžbina...</p>
         ) : filtered.length === 0 ? (

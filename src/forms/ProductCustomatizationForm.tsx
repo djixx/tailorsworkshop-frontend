@@ -109,29 +109,21 @@ const ProductCustomizationForm = ({ productId, onClose }: Props) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
       <div className="relative max-h-[90vh] overflow-y-auto mx-4 w-full max-w-lg bg-[#0f172a] text-gray-100 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.7)] border border-blue-900/40 p-8 transition-all duration-500 animate-fadeIn scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-transparent hover:scrollbar-thumb-blue-500">
-        
-        {/* Close dugme */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition"
         >
           <X size={22} />
         </button>
-
-        {/* Naslov */}
         <div className="flex items-center gap-2 mb-6">
           <Package className="text-blue-500" size={22} />
           <h2 className="text-2xl font-semibold text-blue-400">Prilagodi proizvod</h2>
         </div>
-
-        {/* Detalji proizvoda */}
         <h3 className="text-xl font-semibold text-gray-100 mb-1">{details.name}</h3>
         <p className="mb-3 text-gray-400">{details.description}</p>
         <p className="mb-6 text-blue-400 font-bold text-lg">
           Cena: {details.price.toFixed(2)} RSD
         </p>
-
-        {/* Forma */}
         <div className="space-y-5">
           {Object.entries(details.optionChoiceMap).map(([optionType, choices]) => (
             <div key={optionType}>
@@ -168,16 +160,12 @@ const ProductCustomizationForm = ({ productId, onClose }: Props) => {
             </div>
           ))}
         </div>
-
-        {/* Dugme */}
         <button
           onClick={handleSubmit}
           className="mt-8 w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-3 rounded-lg font-semibold shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
         >
-          <ShoppingCart size={20} /> Dodaj u korpu
+          <ShoppingCart size={20} /> 
         </button>
-
-        {/* Toast */}
         <ToastMessage
           isVisible={toastVisible}
           message={toastMessage}

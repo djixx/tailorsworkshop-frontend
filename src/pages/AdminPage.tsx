@@ -47,8 +47,6 @@ const AdminPage = () => {
           Upravljajte proizvodima i katalogom iz centralne tačke.
         </p>
       </div>
-
-   {/* TABLE CONTAINER */}
 <div className="w-full max-w-6xl bg-[#1b2436]/90 border border-[#243b55] backdrop-blur-md rounded-xl shadow-md p-1">
   <div className="bg-[#1f273d]/70 rounded-lg p-2 border border-[#243b55]/50 shadow-inner">
     <div className="max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-sky-600 scrollbar-track-[#1b2436] rounded-lg">

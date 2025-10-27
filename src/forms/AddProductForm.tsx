@@ -107,8 +107,6 @@ const AddProductForm = () => {
         <h2 className="text-3xl text-blue-400 font-bold text-center mb-8 tracking-wide">
           Dodaj novi proizvod
         </h2>
-
-        {/* Naziv proizvoda */}
         <div>
           <label className="text-sm text-gray-400">Naziv proizvoda</label>
           <input
@@ -121,8 +119,6 @@ const AddProductForm = () => {
             required
           />
         </div>
-
-        {/* Cena */}
         <div>
           <label className="text-sm text-gray-400">Cena (RSD)</label>
           <input
@@ -135,8 +131,6 @@ const AddProductForm = () => {
             required
           />
         </div>
-
-        {/* Opis */}
         <div>
           <label className="text-sm text-gray-400">Opis proizvoda</label>
           <textarea
@@ -148,8 +142,6 @@ const AddProductForm = () => {
             required
           />
         </div>
-
-        {/* Kategorija */}
         <div>
           <label className="text-sm text-gray-400">Kategorija</label>
           <select
@@ -167,8 +159,6 @@ const AddProductForm = () => {
             ))}
           </select>
         </div>
-
-        {/* Opcioni tipovi */}
         <div>
           <label className="text-sm text-gray-400">Opcioni tipovi</label>
           <div className="flex flex-wrap gap-2 mt-3">
@@ -193,7 +183,6 @@ const AddProductForm = () => {
           </div>
         </div>
 
-        {/* Slika */}
         <div className="mt-4">
           <label className="text-sm text-gray-400 mb-2 block">Slika proizvoda</label>
           <label className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center cursor-pointer transition">
@@ -218,7 +207,6 @@ const AddProductForm = () => {
           )}
         </div>
 
-        {/* Submit dugme */}
         <button
           type="submit"
           className="mt-6 w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 py-3 rounded-xl font-semibold text-white shadow-lg transition"
@@ -226,7 +214,6 @@ const AddProductForm = () => {
           Sačuvaj proizvod
         </button>
 
-        {/* Poruka */}
         {message && (
           <div className="text-center mt-4 flex items-center justify-center gap-2 text-sm">
             {message.includes("uspešno") ? (

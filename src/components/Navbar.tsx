@@ -33,15 +33,12 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 py-3 backdrop-blur-lg border-b border-neutral-700/80 bg-[#0f172a]/70">
       <div className="container px-4 mx-auto relative lg:text-sm flex justify-between items-center">
-        {/* Logo */}
         <div className="flex items-center flex-shrink-0">
           <img className="h-10 w-10 mr-2" src={logo1} alt="Logo" />
           <span className="text-xl font-semibold text-gray-100 tracking-tight">
             Tailors Workshop
           </span>
         </div>
-
-        {/* Navigacija */}
         <ul className="hidden lg:flex ml-14 space-x-10">
           {navItems.map((item, index) => (
             <li key={index}>
@@ -54,8 +51,6 @@ const Navbar = () => {
             </li>
           ))}
         </ul>
-
-        {/* Desna strana */}
         <div className="hidden lg:flex items-center space-x-6">
           {/* Ikonica korpe */}
           {isAuthenticated && role === "USER" && (
@@ -67,8 +62,6 @@ const Navbar = () => {
               <ShoppingCart size={20} />
             </button>
           )}
-
-          {/* Dugmad login/logout */}
           {!isAuthenticated ? (
             <>
               <button

@@ -19,9 +19,14 @@ type ProductResponse = {
 type EditProductFormProps = {
   productId: number;
   onClose: () => void;
+  onUpdate: () => void;
 };
 
-const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
+const EditProductForm = ({
+  productId,
+  onClose,
+  onUpdate,
+}: EditProductFormProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [optionTypes, setOptionTypes] = useState<OptionType[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
@@ -30,6 +35,7 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
     price: 0,
     description: "",
     categoryId: 0,
+    imageId: null as number | null,
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -37,14 +43,14 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  //Ucitaj kategorije i opcije
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await api.get<CreateProductData>("/categories/options");
+        const response = await api.get<CreateProductData>(
+          "/categories/options"
+        );
         setCategories(response.data.categories || []);
         setOptionTypes(response.data.options || []);
-        
       } catch (err) {
         console.error("Greška pri učitavanju kategorija i opcija:", err);
         setMessage("Greška pri učitavanju kategorija i opcija.");
@@ -53,21 +59,27 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
     fetchOptions();
   }, []);
 
-  //Ucitaj proizvod
   useEffect(() => {
+    console.log(productId);
     const fetchProduct = async () => {
       try {
-        const response = await api.get<ProductResponse>(`/products/${productId}`);
+        const response = await api.get<ProductResponse>(
+          `/products/${productId}`
+        );
         const data = response.data;
         setForm({
           name: data.name,
           price: data.price,
           description: data.description,
           categoryId: data.categoryId,
+          imageId: data.imageId || null,
         });
-        
+
         setSelectedOptions(data.optionTypes.map((opt) => opt.id));
-        if (data.imageUrl) setImagePreview(data.imageUrl);
+         if (data.imageUrl) {
+          const fullUrl = `${api.defaults.baseURL}${data.imageUrl}`;
+          setImagePreview(fullUrl);
+        }
       } catch (err) {
         console.error("Greška pri učitavanju proizvoda:", err);
         setMessage("Greška pri učitavanju proizvoda.");
@@ -79,7 +91,9 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
   }, [productId]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -96,7 +110,10 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
 
   const handleFileChange = (file: File | null) => {
     setImageFile(file);
-    if (file) setImagePreview(URL.createObjectURL(file));
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+      setForm((prev) => ({ ...prev, imageId: null }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,7 +134,10 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
       });
 
       setMessage(`Proizvod "${response.data.name}" uspešno ažuriran.`);
-      setTimeout(() => onClose(), 1000); 
+      onUpdate();
+      setTimeout(() => {
+        onClose();
+      }, 800);
     } catch (err) {
       console.error("Greška pri ažuriranju proizvoda:", err);
       setMessage("Greška pri ažuriranju proizvoda.");
@@ -134,7 +154,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[#1a2238] p-8 rounded-2xl shadow-2xl w-full max-w-xl border border-blue-900/40 relative">
-    
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-400 hover:text-red-400 transition"
@@ -147,7 +166,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
         </h2>
 
         <form onSubmit={handleSubmit}>
-      
           <div>
             <label className="text-sm text-gray-400">Naziv proizvoda</label>
             <input
@@ -160,7 +178,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
             />
           </div>
 
-         
           <div>
             <label className="text-sm text-gray-400">Cena (RSD)</label>
             <input
@@ -173,7 +190,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
             />
           </div>
 
-        
           <div>
             <label className="text-sm text-gray-400">Opis proizvoda</label>
             <textarea
@@ -185,7 +201,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
             />
           </div>
 
-         
           <div>
             <label className="text-sm text-gray-400">Kategorija</label>
             <select
@@ -204,7 +219,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
             </select>
           </div>
 
-        
           <div>
             <label className="text-sm text-gray-400">Opcioni tipovi</label>
             <div className="flex flex-wrap gap-2 mt-3">
@@ -229,9 +243,10 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
             </div>
           </div>
 
-        
           <div className="mt-4">
-            <label className="text-sm text-gray-400 mb-2 block">Slika proizvoda</label>
+            <label className="text-sm text-gray-400 mb-2 block">
+              Slika proizvoda
+            </label>
             <label className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg cursor-pointer transition">
               <ImagePlus size={18} />
               Izaberi novu sliku
@@ -254,7 +269,6 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
             )}
           </div>
 
-         
           <div className="flex gap-4 mt-6">
             <button
               type="submit"
@@ -281,7 +295,9 @@ const EditProductForm = ({ productId, onClose }: EditProductFormProps) => {
               )}
               <span
                 className={
-                  message.includes("uspešno") ? "text-green-400" : "text-red-400"
+                  message.includes("uspešno")
+                    ? "text-green-400"
+                    : "text-red-400"
                 }
               >
                 {message}

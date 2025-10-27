@@ -28,7 +28,6 @@ const ProductTable = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Modal state
   const [activeProductId, setActiveProductId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -62,19 +61,18 @@ const ProductTable = () => {
       alert("Došlo je do greške pri brisanju proizvoda.");
     }
   };
-
+  const fetchProducts = async () => {
+    try {
+      const res = await api.get("/products/all");
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Greška pri učitavanju proizvoda:", err);
+      setError("Nije moguće učitati proizvode.");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await api.get("/products/all");
-        setProducts(res.data);
-      } catch (err) {
-        console.error("Greška pri učitavanju proizvoda:", err);
-        setError("Nije moguće učitati proizvode.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, []);
 
@@ -147,13 +145,15 @@ const ProductTable = () => {
                   className="p-4 border-b border-gray-700 cursor-pointer"
                   onClick={() => handleSort("name")}
                 >
-                  Naziv {sortField === "name" && (sortOrder === "asc" ? "▲" : "▼")}
+                  Naziv{" "}
+                  {sortField === "name" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
                 <th
                   className="p-4 border-b border-gray-700 cursor-pointer"
                   onClick={() => handleSort("price")}
                 >
-                  Cena {sortField === "price" && (sortOrder === "asc" ? "▲" : "▼")}
+                  Cena{" "}
+                  {sortField === "price" && (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
                 <th className="p-4 border-b border-gray-700">Opis</th>
                 <th
@@ -161,9 +161,12 @@ const ProductTable = () => {
                   onClick={() => handleSort("categoryName")}
                 >
                   Kategorija{" "}
-                  {sortField === "categoryName" && (sortOrder === "asc" ? "▲" : "▼")}
+                  {sortField === "categoryName" &&
+                    (sortOrder === "asc" ? "▲" : "▼")}
                 </th>
-                <th className="p-4 border-b border-gray-700 text-center">Akcije</th>
+                <th className="p-4 border-b border-gray-700 text-center">
+                  Akcije
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -179,10 +182,16 @@ const ProductTable = () => {
                     key={product.id}
                     className="hover:bg-[#30304a] transition border-b border-gray-800 text-sm"
                   >
-                    <td className="p-4 font-medium text-gray-100">{product.name}</td>
-                    <td className="p-4 text-gray-300">{product.price.toFixed(2)} RSD</td>
+                    <td className="p-4 font-medium text-gray-100">
+                      {product.name}
+                    </td>
+                    <td className="p-4 text-gray-300">
+                      {product.price.toFixed(2)} RSD
+                    </td>
                     <td className="p-4 text-gray-400">{product.description}</td>
-                    <td className="p-4 text-gray-200">{product.categoryName}</td>
+                    <td className="p-4 text-gray-200">
+                      {product.categoryName}
+                    </td>
                     <td className="p-4 flex justify-center gap-4">
                       <button
                         onClick={() => openModal(product.id)}
@@ -203,8 +212,6 @@ const ProductTable = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
         <div className="flex justify-center items-center gap-4 mt-8">
           <button
             onClick={prevPage}
@@ -235,7 +242,6 @@ const ProductTable = () => {
           </button>
         </div>
 
-        {/* Edit Modal */}
         {isModalOpen && activeProductId && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
             <div className="bg-[#1a2238] p-8 rounded-2xl shadow-2xl w-full max-w-2xl relative border border-blue-900/40">
@@ -249,6 +255,7 @@ const ProductTable = () => {
               <EditProductForm
                 productId={activeProductId}
                 onClose={closeModal}
+                onUpdate={fetchProducts}
               />
             </div>
           </div>

@@ -38,8 +38,6 @@ const AdminDashboard = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("SUBMITTED");
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -71,7 +69,9 @@ const AdminDashboard = () => {
         reviewerEmail: "admin@gmail.com",
       });
 
-      setMessage(`Status porudžbine #${cartId} uspešno promenjen na ${newStatus}.`);
+      setMessage(
+        `Status porudžbine #${cartId} uspešno promenjen na ${newStatus}.`
+      );
       fetchOrders(selectedStatus);
     } catch (err) {
       console.error("Greška pri promeni statusa:", err);
@@ -79,7 +79,9 @@ const AdminDashboard = () => {
     }
   };
 
-  const formatOptions = (optionsJson: string): { label: string; value: string }[] => {
+  const formatOptions = (
+    optionsJson: string
+  ): { label: string; value: string }[] => {
     try {
       const obj = JSON.parse(optionsJson) as Record<string, string>;
       const map: Record<string, string> = {
@@ -87,6 +89,8 @@ const AdminDashboard = () => {
         LENGTH: "Dužina",
         MATERIAL: "Materijal",
         SIZE: "Veličina",
+        PATTERN: "Šara",
+        WAIST_TYPE: "Tip struka",
       };
       return Object.entries(obj).map(([key, value]) => ({
         label: map[key.toUpperCase()] || key,
@@ -109,7 +113,6 @@ const AdminDashboard = () => {
     });
   }, [orders, sortOrder]);
 
-  // Pagination logic
   const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
   const currentOrders = sortedOrders.slice(
     (currentPage - 1) * itemsPerPage,
@@ -117,13 +120,15 @@ const AdminDashboard = () => {
   );
 
   if (loading)
-    return <p className="text-gray-300 text-center mt-10">Učitavanje porudžbina...</p>;
-  if (error)
-    return <p className="text-red-400 text-center mt-10">{error}</p>;
+    return (
+      <p className="text-gray-300 text-center mt-10">
+        Učitavanje porudžbina...
+      </p>
+    );
+  if (error) return <p className="text-red-400 text-center mt-10">{error}</p>;
 
   return (
     <div className="bg-gradient-to-b from-[#0b1320] to-[#1b263b] text-gray-100 min-h-screen py-12 px-6">
-      {/* HEADER */}
       <div className="flex justify-center items-center gap-3 mb-10">
         <Package size={34} className="text-sky-400" />
         <h2 className="text-4xl font-bold text-sky-400 tracking-wide">
@@ -131,7 +136,6 @@ const AdminDashboard = () => {
         </h2>
       </div>
 
-      {/* FILTERS */}
       <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-10">
         <div className="flex gap-3">
           {["SUBMITTED", "APPROVED", "DENIED"].map((status) => (
@@ -164,16 +168,12 @@ const AdminDashboard = () => {
           )}
         </button>
       </div>
-
-      {/* MESSAGE */}
       {message && (
         <div className="text-center mb-6 flex justify-center items-center gap-2 animate-fade-in">
           <CheckCircle className="text-green-400" size={18} />
           <p className="text-green-400 font-medium">{message}</p>
         </div>
       )}
-
-      {/* ORDERS */}
       {currentOrders.length === 0 ? (
         <div className="text-center text-gray-400 mt-10">
           <AlertCircle className="mx-auto mb-3 text-sky-400" size={42} />
@@ -196,7 +196,9 @@ const AdminDashboard = () => {
                   <p className="text-gray-400 text-sm mt-1">
                     Kreirana: {order.createdOn || "Nepoznato"}
                   </p>
-                  <p className="text-gray-400 text-sm">Korisnik: {order.createdBy}</p>
+                  <p className="text-gray-400 text-sm">
+                    Korisnik: {order.createdBy}
+                  </p>
                   <p className="text-gray-400 text-sm">
                     Status:{" "}
                     <span
@@ -230,7 +232,9 @@ const AdminDashboard = () => {
                   </button>
 
                   <select
-                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                    onChange={(e) =>
+                      handleStatusChange(order.id, e.target.value)
+                    }
                     defaultValue=""
                     className="bg-[#1f2a40] border border-sky-700 text-gray-200 p-2 rounded-lg"
                   >
@@ -251,25 +255,45 @@ const AdminDashboard = () => {
 
                   {order.items && order.items.length > 0 ? (
                     <div className="grid sm:grid-cols-2 gap-4">
-                      {order.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="p-4 bg-[#1f2a40] rounded-xl border border-[#2c3e55] hover:border-sky-600 transition"
-                        >
-                          <h5 className="font-semibold text-sky-300 text-lg mb-2">
-                            {item.productName}
-                          </h5>
-                          <p className="text-gray-300 text-sm">
-                            Količina: {item.quantity}
-                          </p>
-                          <p className="text-gray-300 text-sm">
-                            Cena po komadu: {item.productPrice.toFixed(2)} RSD
-                          </p>
-                          <p className="text-sky-400 font-semibold">
-                            Ukupno: {item.totalPrice.toFixed(2)} RSD
-                          </p>
-                        </div>
-                      ))}
+                      {order.items.map((item) => {
+                        const options = formatOptions(item.optionsJson);
+                        return (
+                          <div
+                            key={item.id}
+                            className="p-5 bg-[#1f2a40] rounded-xl border border-[#2c3e55] hover:border-sky-600 transition"
+                          >
+                            <div className="flex justify-between items-start">
+                              <h5 className="font-semibold text-sky-300 text-lg mb-3">
+                                {item.productName}
+                              </h5>
+                              <p className="text-sky-400 font-bold">
+                                {item.totalPrice.toFixed(2)} RSD
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {options.map((opt, index) => (
+                                <span
+                                  key={index}
+                                  className="bg-[#24324a] text-gray-200 border border-[#3b4a66] px-3 py-1 rounded-full text-sm"
+                                >
+                                  <span className="font-semibold text-sky-400">
+                                    {opt.label}:
+                                  </span>{" "}
+                                  {opt.value}
+                                </span>
+                              ))}
+                            </div>
+
+                            <p className="text-gray-300 text-sm mt-2">
+                              Količina:{" "}
+                              <span className="font-medium">
+                                {item.quantity}
+                              </span>
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-gray-400 italic">
@@ -283,7 +307,6 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 mt-10">
           <button
